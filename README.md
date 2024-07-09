@@ -5,7 +5,7 @@ Este projeto está sendo desenvolvido para aperfeiçoar minhas habilidades usand
 #### [Go Api Gen](https://github.com/discord-gophers/goapi-gen)
 
 O `goapi-gen` serve para gerarmos um código boilerplate para serviços baseados na OpenAPI, como o Swagger. Com ele, geramos rapidamente modelos e estruturas baseado no scheme.json/yaml
-da API documentada. Inclusive, `goapi-gen` utiliza o framework (Chi)[https://github.com/go-chi/chi] para fazer o gerenciamento de rotas e chamadas HTTP.
+da API documentada. Inclusive, `goapi-gen` utiliza o framework [Chi](https://github.com/go-chi/chi) para fazer o gerenciamento de rotas e chamadas HTTP.
 
 #### [Tern](https://github.com/jackc/tern)
 
