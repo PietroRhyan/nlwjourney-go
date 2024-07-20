@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 	"net/http"
+	"time"
 
 	"journey/internal/api/spec"
 	"journey/internal/pgstore"
@@ -188,28 +190,47 @@ func (api *API) PutTripsTripID(w http.ResponseWriter, r *http.Request, tripID st
 // Get a trip activities.
 // (GET /trips/{tripId}/activities)
 func (api *API) GetTripsTripIDActivities(w http.ResponseWriter, r *http.Request, tripID string) *spec.Response {
-	panic("not implemented") // TODO
-	// id, err := uuid.Parse(tripID)
-	// if err != nil {
-	// 	return spec.GetTripsTripIDActivitiesJSON400Response(spec.Error{Message: "invalid uuid"})
-	// }
+	id, err := uuid.Parse(tripID)
+	if err != nil {
+		return spec.GetTripsTripIDActivitiesJSON400Response(spec.Error{Message: "invalid uuid"})
+	}
 
-	// trip, err := api.store.GetTrip(r.Context(), id)
-	// if err != nil {
-	// 	if errors.Is(err, pgx.ErrNoRows) {
-	// 		return spec.GetTripsTripIDActivitiesJSON400Response(spec.Error{Message: "trip not found"})
-	// 	}
+	trip, err := api.store.GetTrip(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return spec.GetTripsTripIDActivitiesJSON400Response(spec.Error{Message: "trip not found"})
+		}
 
-	// 	api.logger.Error("failed to find a trip", zap.Error(err), zap.String("trip_id", tripID))
-	// 	return spec.GetTripsTripIDActivitiesJSON400Response(spec.Error{Message: "something went wrong, try again"})
-	// }
+		api.logger.Error("failed to find a trip", zap.Error(err), zap.String("trip_id", tripID))
+		return spec.GetTripsTripIDActivitiesJSON400Response(spec.Error{Message: "something went wrong, try again"})
+	}
 
-	// activities, err := api.store.GetTripActivities(r.Context(), trip.ID)
-	// if err != nil {
-	// 	return spec.GetTripsTripIDActivitiesJSON400Response(spec.Error{Message: "failed to get trip activities"})
-	// }
+	activities, err := api.store.GetTripActivities(r.Context(), trip.ID)
+	if err != nil {
+		return spec.GetTripsTripIDActivitiesJSON400Response(spec.Error{Message: "failed to get trip activities"})
+	}
 
-	// return spec.GetTripsTripIDActivitiesJSON200Response(spec.GetTripActivitiesResponse{})
+	// Calculates the approximate duration of days between the start and end dates - e.g. 01/03 - 03/03 = 3 days
+	tripDuration := math.Ceil(trip.EndsAt.Time.Sub(trip.StartsAt.Time).Hours()/24) + 1
+
+	innerArray := make([]spec.GetTripActivitiesResponseInnerArray, len(activities))
+	for i, activity := range activities {
+		innerArray[i] = spec.GetTripActivitiesResponseInnerArray{
+			ID:       activity.ID.String(),
+			Title:    activity.Title,
+			OccursAt: activity.OccursAt.Time,
+		}
+	}
+
+	outerArray := make([]spec.GetTripActivitiesResponseOuterArray, int(tripDuration))
+	for i := 0; i < int(tripDuration); i += 1 {
+		outerArray[i] = spec.GetTripActivitiesResponseOuterArray{
+			Activities: innerArray,
+			Date:       trip.StartsAt.Time.Add(time.Hour * 24 * time.Duration(i)),
+		}
+	}
+
+	return spec.GetTripsTripIDActivitiesJSON200Response(spec.GetTripActivitiesResponse{Activities: outerArray})
 }
 
 // Create a trip activity.
@@ -251,7 +272,23 @@ func (api *API) PostTripsTripIDActivities(w http.ResponseWriter, r *http.Request
 // Confirm a trip and send e-mail invitations.
 // (GET /trips/{tripId}/confirm)
 func (api *API) GetTripsTripIDConfirm(w http.ResponseWriter, r *http.Request, tripID string) *spec.Response {
-	panic("not implemented") // TODO: Implement
+	id, err := uuid.Parse(tripID)
+	if err != nil {
+		return spec.GetTripsTripIDConfirmJSON400Response(spec.Error{Message: "invalid uuid"})
+	}
+
+	if _, err := api.store.GetTrip(r.Context(), id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return spec.GetTripsTripIDConfirmJSON400Response(spec.Error{Message: "trip not found"})
+		}
+
+		api.logger.Error("failed to find trip", zap.Error(err), zap.String("trip_id", tripID))
+		return spec.GetTripsTripIDConfirmJSON400Response(spec.Error{Message: "something went wrong, try again"})
+	}
+
+	// Mailpit logic
+
+	return spec.GetTripsTripIDConfirmJSON204Response(nil)
 }
 
 // Invite someone to the trip.
@@ -288,6 +325,8 @@ func (api *API) PostTripsTripIDInvites(w http.ResponseWriter, r *http.Request, t
 	}); err != nil {
 		return spec.PostTripsTripIDInvitesJSON400Response(spec.Error{Message: "failed to invite participant to the trip"})
 	}
+
+	// Mailpit logic
 
 	return spec.PostTripsTripIDInvitesJSON201Response(spec.InviteParticipantRequest{Email: body.Email})
 }
