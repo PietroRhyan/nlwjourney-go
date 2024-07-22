@@ -90,7 +90,7 @@ func (mp Mailpit) SendConfirmTripEmailToTripParticipant(tripID uuid.UUID, email 
 		trip.Destination, trip.StartsAt.Time.Format(time.DateOnly),
 	))
 
-	client, err := mail.NewClient("localhost", mail.WithTLSPortPolicy(mail.NoTLS), mail.WithPort(1025))
+	client, err := mail.NewClient("mailpit", mail.WithTLSPortPolicy(mail.NoTLS), mail.WithPort(1025))
 
 	if err != nil {
 		return fmt.Errorf("mailpit: failed to create email client for SendConfirmEmailToTripOwner: %w", err)
