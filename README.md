@@ -19,3 +19,11 @@ O `sqlc` funciona muito bem com o `tern`, ele serve para gerarmos código SQL co
 1. Codamos nossa query em SQL;
 2. Rodamos `sqlc` para gerar código com type-safety paras essas queries;
 3. Escrevemos código que utilize estes arquivos gerados, no nosso caso, usamos estas queries com o `tern` para rodar as migrations no nosso banco.
+
+#### [Mailpit](https://mailpit.axllent.org/)
+
+O `mailpit` é uma ferramenta multiplataforma para criação e testes de emails, onde oferece uma interface web para monitorarmos os disparos de email e sua estilização.
+
+#### [Air](https://github.com/air-verse/air)
+
+`air` é um utilitário para podermos ter o hot-reload de nossas aplicações em Go.
